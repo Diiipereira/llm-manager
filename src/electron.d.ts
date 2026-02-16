@@ -44,6 +44,9 @@ declare global {
         getDiskInfo: () => Promise<DiskInfo>;
         pullModel: (name: string) => Promise<{ success: boolean; error?: string }>;
         deleteModel: (name: string) => Promise<{ success: boolean; error?: string }>;
+        getVersion: () => Promise<string | null>;
+        checkUpdate: () => Promise<string | null>;
+        openDownload: () => Promise<void>;
       };
       window: {
         minimize: () => Promise<void>;

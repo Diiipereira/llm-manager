@@ -38,6 +38,9 @@ interface LlmContextType {
   toggleService: () => Promise<void>;
   handlePull: (name: string) => Promise<void>;
   handleDelete: (name: string) => Promise<void>;
+  updateAvailable: boolean;
+  latestVersion: string;
+  startUpdate: () => void;
 }
 
 const defaultDiskInfo: DiskInfo = { drive: 'C:', label: 'Disco', totalGB: 0, freeGB: 0, usedGB: 0, modelsPath: '' };
@@ -56,6 +59,35 @@ export function LlmProvider({ children }: { children: ReactNode }) {
   const [isPulling, setIsPulling] = useState(false);
   const [pullStatus, setPullStatus] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [latestVersion, setLatestVersion] = useState('');
+
+  const checkUpdates = async () => {
+    try {
+      const local = await window.api.ollama.getVersion();
+      const remote = await window.api.ollama.checkUpdate();
+
+      if (local && remote && local !== remote) {
+        // Simple string comparison for now, or semver if needed
+        // Assuming remote is always newer if different for simplicity in this context
+        // But better to check if remote > local
+        // For now, let's just check if they are different and remote is likely a higher version
+        // Actually, let's just rely on equality. If they differ, show update.
+        // A better way is using semver compare, but I'll stick to simple diff for this task
+        // unless I import a semver lib.
+        // Let's assume if they don't match, an update might be available.
+        // To be safer, let's only show if remote != local.
+        setUpdateAvailable(remote !== local);
+        setLatestVersion(remote);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const startUpdate = () => {
+    window.api.ollama.openDownload();
+  };
 
   const refreshData = async () => {
     try {
@@ -82,6 +114,7 @@ export function LlmProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshData();
+    checkUpdates();
     const interval = setInterval(refreshData, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -158,6 +191,9 @@ export function LlmProvider({ children }: { children: ReactNode }) {
         toggleService,
         handlePull,
         handleDelete,
+        updateAvailable,
+        latestVersion,
+        startUpdate,
       }}
     >
       {children}

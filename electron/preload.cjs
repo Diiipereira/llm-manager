@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld('api', {
     getDiskInfo: () => ipcRenderer.invoke('ollama:disk-info'),
     pullModel: (name) => ipcRenderer.invoke('ollama:pull-model', name),
     deleteModel: (name) => ipcRenderer.invoke('ollama:delete-model', name),
+    getVersion: () => ipcRenderer.invoke('ollama:version'),
+    checkUpdate: () => ipcRenderer.invoke('ollama:check-update'),
+    openDownload: () => ipcRenderer.invoke('ollama:open-download'),
   },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),

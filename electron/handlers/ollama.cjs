@@ -33,8 +33,6 @@ module.exports = {
       const homeDir = os.homedir();
       const env = {
         ...process.env,
-        PYTHONIOENCODING: 'utf-8',
-        PYTHONUTF8: '1',
         OLLAMA_HOST: '127.0.0.1:11434',
       };
 
@@ -51,34 +49,15 @@ module.exports = {
         ollamaProcess.unref();
       }
 
-      const openWebUiPath = path.join(homeDir, '.local', 'bin', 'open-webui.exe');
-      const logPath = path.join(homeDir, 'log_ia.txt');
-
-      if (fs.existsSync(openWebUiPath)) {
-        const logStream = fs.openSync(logPath, 'a');
-        const webUiProcess = spawn(openWebUiPath, ['serve'], {
-          cwd: homeDir,
-          env: env,
-          detached: true,
-          stdio: ['ignore', logStream, logStream],
-          windowsHide: true,
-        });
-        webUiProcess.unref();
-        return 'Started';
-      }
-      return 'Started (Ollama Only)';
+      return 'Started';
     });
 
     ipcMain.handle('ollama:stop', async () => {
       const commands = [
-        'taskkill /F /IM ollama.exe /T',
         'taskkill /F /IM "Ollama App.exe" /T',
-        'taskkill /F /IM open-webui.exe /T',
-        'taskkill /F /IM python.exe /T',
-        'taskkill /F /IM uv.exe /T',
       ];
       for (const cmd of commands) {
-        await runCommand(cmd).catch(() => {});
+        await runCommand(cmd).catch(() => { });
       }
       return 'Stopped';
     });
@@ -173,6 +152,38 @@ module.exports = {
       } catch (error) {
         return { success: false, error: error.toString() };
       }
+    });
+
+    ipcMain.handle('ollama:version', async () => {
+      try {
+        const output = await runCommand('ollama --version');
+        // Output format: "ollama version is 0.1.24" or "ollama version 0.1.24"
+        const match = output.match(/version\s+(?:is\s+)?v?(\d+\.\d+\.\d+)/i);
+        return match ? match[1] : null;
+      } catch {
+        return null;
+      }
+    });
+
+    ipcMain.handle('ollama:check-update', async () => {
+      try {
+        // Fetch latest release from GitHub
+        // process.versions.electron includes 'node' property, so we can use fetch if node version >= 18
+        // Or use 'https' module. Using fetch for simplicity as Electron usually has modern Node.
+        const response = await fetch('https://api.github.com/repos/ollama/ollama/releases/latest');
+        if (!response.ok) return null;
+        const data = await response.json();
+        const latestVersion = data.tag_name.replace(/^v/, '');
+        return latestVersion;
+      } catch (e) {
+        console.error('Failed to check for updates:', e);
+        return null;
+      }
+    });
+
+    ipcMain.handle('ollama:open-download', async () => {
+      const { shell } = require('electron');
+      await shell.openExternal('https://ollama.com/download');
     });
   },
 };

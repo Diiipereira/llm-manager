@@ -19,10 +19,12 @@ export function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [version, setVersion] = useState('');
+  const [appVersion, setAppVersion] = useState('');
+  const [ollamaVersion, setOllamaVersion] = useState('');
 
   useEffect(() => {
-    window.api.app.getVersion().then(v => setVersion(v));
+    window.api.app.getVersion().then(v => setAppVersion(v));
+    window.api.ollama.getVersion().then(v => setOllamaVersion(v || 'Não detectado'));
   }, []);
 
   const loadSettings = useCallback(async () => {
@@ -157,7 +159,18 @@ export function SettingsPage() {
             <div className="text-sm font-semibold text-text-main">LLM Manager</div>
             <div className="text-[10px] text-text-muted opacity-70">Gerenciador Local de Modelos</div>
           </div>
-          <div className="bg-app px-3 py-1.5 rounded-xl font-mono text-sm text-accent border border-white/5">v{version}</div>
+          <div className="bg-app px-3 py-1.5 rounded-xl font-mono text-sm text-accent border border-white/5">v{appVersion}</div>
+        </div>
+
+        <div className="bg-card border border-white/5 p-4 flex items-center gap-4 rounded-2xl mt-2">
+          <div className="w-9 h-9 bg-app rounded-xl flex items-center justify-center">
+            <InfoIcon size={18} className="text-text-muted" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-semibold text-text-main">Ollama Instalado</div>
+            <div className="text-[10px] text-text-muted opacity-70">Versão do serviço local</div>
+          </div>
+          <div className="bg-app px-3 py-1.5 rounded-xl font-mono text-sm text-accent border border-white/5">{ollamaVersion}</div>
         </div>
       </div>
 
@@ -175,10 +188,10 @@ export function SettingsPage() {
           onClick={handleSave}
           disabled={!hasChanges && !saved}
           className={`px-5 py-2.5 rounded-full font-semibold text-sm flex items-center gap-2 transition-all cursor-pointer border-none ${saved
-              ? 'bg-success text-on-accent'
-              : hasChanges
-                ? 'bg-accent text-on-accent hover:brightness-110'
-                : 'bg-hover text-text-muted cursor-not-allowed'
+            ? 'bg-success text-on-accent'
+            : hasChanges
+              ? 'bg-accent text-on-accent hover:brightness-110'
+              : 'bg-hover text-text-muted cursor-not-allowed'
             }`}
         >
           {saved ? <CheckIcon size={16} weight="bold" /> : <FloppyDiskIcon size={16} weight="bold" />}

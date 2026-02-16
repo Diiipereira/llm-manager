@@ -46,7 +46,7 @@ declare global {
         deleteModel: (name: string) => Promise<{ success: boolean; error?: string }>;
         getVersion: () => Promise<string | null>;
         checkUpdate: () => Promise<string | null>;
-        openDownload: () => Promise<void>;
+        startUpdate: () => Promise<{ success: boolean; error?: string }>;
       };
       window: {
         minimize: () => Promise<void>;

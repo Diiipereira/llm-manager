@@ -40,7 +40,8 @@ interface LlmContextType {
   handleDelete: (name: string) => Promise<void>;
   updateAvailable: boolean;
   latestVersion: string;
-  startUpdate: () => void;
+  isUpdating: boolean;
+  startUpdate: () => Promise<void>;
 }
 
 const defaultDiskInfo: DiskInfo = { drive: 'C:', label: 'Disco', totalGB: 0, freeGB: 0, usedGB: 0, modelsPath: '' };
@@ -61,6 +62,7 @@ export function LlmProvider({ children }: { children: ReactNode }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestVersion, setLatestVersion] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const checkUpdates = async () => {
     try {
@@ -85,8 +87,16 @@ export function LlmProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const startUpdate = () => {
-    window.api.ollama.openDownload();
+  const startUpdate = async () => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      await window.api.ollama.startUpdate();
+    } catch {
+      // Error handling if needed
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const refreshData = async () => {
@@ -193,6 +203,7 @@ export function LlmProvider({ children }: { children: ReactNode }) {
         handleDelete,
         updateAvailable,
         latestVersion,
+        isUpdating,
         startUpdate,
       }}
     >

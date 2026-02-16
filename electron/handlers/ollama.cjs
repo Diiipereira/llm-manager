@@ -181,9 +181,35 @@ module.exports = {
       }
     });
 
-    ipcMain.handle('ollama:open-download', async () => {
-      const { shell } = require('electron');
-      await shell.openExternal('https://ollama.com/download');
+    ipcMain.handle('ollama:start-update', async () => {
+      try {
+        // 1. Get latest release
+        const response = await fetch('https://api.github.com/repos/ollama/ollama/releases/latest');
+        if (!response.ok) throw new Error('Falha ao buscar informações da atualização');
+        const data = await response.json();
+
+        // 2. Find asset
+        const asset = data.assets.find(a => a.name === 'OllamaSetup.exe');
+        if (!asset) throw new Error('Instalador não encontrado na versão mais recente');
+
+        // 3. Download using PowerShell (to avoid Node memory issues with large files)
+        const tempDir = os.tmpdir();
+        const installerPath = path.join(tempDir, 'OllamaSetup.exe');
+
+        // Delete if exists
+        try { fs.unlinkSync(installerPath); } catch { }
+
+        const downloadCmd = `powershell -Command "Invoke-WebRequest -Uri '${asset.browser_download_url}' -OutFile '${installerPath}'"`;
+        await runCommand(downloadCmd);
+
+        // 4. Run installer
+        const { shell } = require('electron');
+        shell.openPath(installerPath); // Safer way to run the exe
+
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message || error.toString() };
+      }
     });
   },
 };
